@@ -38,4 +38,5 @@ export class Ticket {
 
   @OneToMany(() => TicketHistory, history => history.ticket)
   history: TicketHistory[];
+  
 }
