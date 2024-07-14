@@ -54,6 +54,30 @@ export class TicketsService {
     }
   }
 
+  async updateTicket(ticketID: number, status: string, assignedAgent?: string): Promise<Ticket> {
+    const ticket = await this.ticketsRepository.findOneBy({ ticketID });
+    if (ticket) {
+      const oldValue = ticket.status;
+      ticket.status = status;
+      if (assignedAgent) {
+        ticket.assignedAgent = assignedAgent;
+      }
+      if (status === 'Resolved') {
+        ticket.resolutionDate = new Date();
+        this.requestCustomerFeedback(ticket.customerID, ticket.ticketID);
+      }
+      await this.ticketsRepository.save(ticket);
+      await this.ticketHistoryService.logChange(ticketID, 'Status Update', oldValue, status);
+      this.notifyCustomer(ticket.ticketID, `Ticket status updated to ${status}`);
+      return ticket;
+    }
+    throw new Error('Ticket not found');
+  }
+
+  async getTicketById(ticketID: number): Promise<Ticket> {
+    return this.ticketsRepository.findOneBy({ ticketID });
+  }
+
   async assignTicket(ticketID: number, agentID: string): Promise<Ticket> {
     const ticket = await this.ticketsRepository.findOneBy({ ticketID });
     if (ticket && ticket.status === 'Open') {
