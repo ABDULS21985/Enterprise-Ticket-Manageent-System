@@ -1,5 +1,3 @@
-// src/tickets/tickets.module.ts
-
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TicketsService } from './tickets.service';
@@ -11,6 +9,7 @@ import { CommentsService } from './comments.service';
 import { CommentsController } from './comments.controller';
 import { TicketHistoryService } from './ticket-history.service';
 import { TicketHistoryController } from './ticket-history.controller';
+import { TicketEscalationService } from './ticket-escalation.service';
 import { PriorityEscalationService } from './priority-escalation.service';
 import { MailerService } from '../mailer/mailer.service';
 import { ReportingService } from '../reporting/reporting.service';
@@ -19,18 +18,20 @@ import { ReportingController } from '../reporting/reporting.controller';
 @Module({
   imports: [TypeOrmModule.forFeature([Ticket, Comment, TicketHistory])],
   providers: [
-    TicketsService, 
-    CommentsService, 
-    TicketHistoryService, 
-    PriorityEscalationService, 
+    TicketsService,
+    CommentsService,
+    TicketHistoryService,
+    TicketEscalationService,
+    PriorityEscalationService,
     MailerService,
     ReportingService,
   ],
   controllers: [
-    TicketsController, 
-    CommentsController, 
+    TicketsController,
+    CommentsController,
     TicketHistoryController,
     ReportingController,
   ],
+  exports: [TypeOrmModule], // Export TypeOrmModule to make the entities available
 })
 export class TicketsModule {}
