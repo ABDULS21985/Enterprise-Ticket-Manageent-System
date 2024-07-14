@@ -33,7 +33,7 @@ export class Ticket {
 
   @Column({ nullable: true })
   lastEscalationDate: Date;  // New column for tracking the last escalation date
-  
+
   @Column({ nullable: true })
   slaDueDate: Date; 
   @OneToMany(() => Comment, comment => comment.ticket)
@@ -47,4 +47,8 @@ export class Ticket {
 
   @Column({ nullable: true })
   customerFeedback: string; // New column for customer feedback
+
+  @Column('simple-array', { nullable: true, default: '' })
+  tags: string[]; 
+
 }

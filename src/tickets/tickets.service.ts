@@ -224,4 +224,35 @@ export class TicketsService {
       // Optionally, escalate the ticket or update its status
     }
   }
+
+  async addTag(ticketID: number, tag: string): Promise<Ticket> {
+    const ticket = await this.ticketsRepository.findOneBy({ ticketID });
+    if (!ticket) {
+      throw new Error('Ticket not found');
+    }
+
+    if (!ticket.tags) {
+      ticket.tags = [];
+    }
+
+    if (!ticket.tags.includes(tag)) {
+      ticket.tags.push(tag);
+      await this.ticketsRepository.save(ticket);
+    }
+
+    return ticket;
+  }
+
+  async removeTag(ticketID: number, tag: string): Promise<Ticket> {
+    const ticket = await this.ticketsRepository.findOneBy({ ticketID });
+    if (!ticket) {
+      throw new Error('Ticket not found');
+    }
+
+    ticket.tags = ticket.tags.filter(t => t !== tag);
+    await this.ticketsRepository.save(ticket);
+
+    return ticket;
+  }
+
 } 

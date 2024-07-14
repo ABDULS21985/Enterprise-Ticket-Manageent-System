@@ -126,4 +126,19 @@ export class TicketsController {
   ): Promise<Ticket> {
     return this.ticketsService.addCustomerFeedback(ticketID, feedback);
   }
+  @Patch(':ticketID/tags/add')
+  async addTag(
+    @Param('ticketID') ticketID: number,
+    @Body('tag') tag: string,
+  ): Promise<Ticket> {
+    return this.ticketsService.addTag(ticketID, tag);
+  }
+
+  @Patch(':ticketID/tags/remove')
+  async removeTag(
+    @Param('ticketID') ticketID: number,
+    @Body('tag') tag: string,
+  ): Promise<Ticket> {
+    return this.ticketsService.removeTag(ticketID, tag);
+  }
 }
