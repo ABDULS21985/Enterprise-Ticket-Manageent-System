@@ -105,4 +105,33 @@ export class TicketsService {
     const email = `${agentID}@example.com`; // Adjust this as necessary
     await this.mailerService.sendMail(email, 'Ticket Assignment', message);
   }
+
+  async autoAssignTicket(ticketID: number): Promise<Ticket> {
+    const ticket = await this.ticketsRepository.findOneBy({ ticketID });
+    if (!ticket) {
+      throw new Error('Ticket not found');
+    }
+
+    // Implement logic to find the best agent for this ticket
+    const agentID = await this.findBestAgentForTicket(ticket);
+
+    ticket.assignedAgent = agentID;
+    ticket.status = 'In Progress';
+    await this.ticketsRepository.save(ticket);
+    return ticket;
+  }
+
+  private async findBestAgentForTicket(ticket: Ticket): Promise<string> {
+    // Example logic: find the agent with the least number of tickets assigned
+    const agents = ['agent1', 'agent2', 'agent3']; // Replace with actual agent IDs from your database
+    const agentWorkloads = await Promise.all(
+      agents.map(async (agentID) => ({
+        agentID,
+        workload: await this.ticketsRepository.count({ where: { assignedAgent: agentID } }),
+      })),
+    );
+
+    const bestAgent = agentWorkloads.reduce((prev, curr) => (prev.workload < curr.workload ? prev : curr));
+    return bestAgent.agentID;
+  }
 }

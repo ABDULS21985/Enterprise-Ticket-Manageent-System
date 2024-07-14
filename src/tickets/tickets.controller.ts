@@ -44,6 +44,12 @@ export class TicketsController {
   }
 
   @UseGuards(AuthGuard('jwt'))
+  @Patch(':ticketID/auto-assign')
+  async autoAssignTicket(@Param('ticketID') ticketID: number): Promise<Ticket> {
+    return this.ticketsService.autoAssignTicket(ticketID);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
   @Get()
   async getTickets(
     @Query('status') status?: string,
