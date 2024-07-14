@@ -1,9 +1,8 @@
-// src/tickets/entities/ticket.entity.ts
-
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany, ManyToOne } from 'typeorm';
 import { Comment } from './comment.entity';
 import { TicketHistory } from './ticket-history.entity';
 import { Attachment } from './attachment.entity';
+import { TicketForm } from './ticket-form.entity';
 
 @Entity()
 export class Ticket {
@@ -17,10 +16,10 @@ export class Ticket {
   issueDescription: string;
 
   @Column()
-  status: string; // e.g., Open, In Progress, Resolved, Closed
+  status: string;
 
   @Column()
-  priority: string; // e.g., Low, Medium, High, Urgent
+  priority: string;
 
   @Column({ nullable: true })
   assignedAgent: string;
@@ -32,10 +31,11 @@ export class Ticket {
   resolutionDate: Date;
 
   @Column({ nullable: true })
-  lastEscalationDate: Date;  // New column for tracking the last escalation date
+  lastEscalationDate: Date;
 
   @Column({ nullable: true })
-  slaDueDate: Date; 
+  slaDueDate: Date;
+
   @OneToMany(() => Comment, comment => comment.ticket)
   comments: Comment[];
 
@@ -46,9 +46,11 @@ export class Ticket {
   attachments: Attachment[];
 
   @Column({ nullable: true })
-  customerFeedback: string; // New column for customer feedback
+  customerFeedback: string;
 
   @Column('simple-array', { nullable: true, default: '' })
-  tags: string[]; 
+  tags: string[];
 
+  @ManyToOne(() => TicketForm)
+  ticketForm: TicketForm;
 }
