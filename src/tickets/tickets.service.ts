@@ -47,21 +47,21 @@ export class TicketsService {
     throw new Error('Ticket not found or already in progress');
   }
 
-  async updateTicketStatus(ticketID: number, status: string): Promise<Ticket> {
-    const ticket = await this.ticketsRepository.findOneBy({ ticketID });
-    if (ticket) {
-      const oldValue = ticket.status;
-      ticket.status = status;
-      if (status === 'Resolved') {
-        ticket.resolutionDate = new Date();
-      }
-      await this.ticketsRepository.save(ticket);
-      await this.ticketHistoryService.logChange(ticketID, 'Status Update', oldValue, status);
-      this.notifyCustomer(ticket.ticketID, `Ticket status updated to ${status}`);
-      return ticket;
-    }
-    throw new Error('Ticket not found');
-  }
+  // async updateTicketStatus(ticketID: number, status: string): Promise<Ticket> {
+  //   const ticket = await this.ticketsRepository.findOneBy({ ticketID });
+  //   if (ticket) {
+  //     const oldValue = ticket.status;
+  //     ticket.status = status;
+  //     if (status === 'Resolved') {
+  //       ticket.resolutionDate = new Date();
+  //     }
+  //     await this.ticketsRepository.save(ticket);
+  //     await this.ticketHistoryService.logChange(ticketID, 'Status Update', oldValue, status);
+  //     this.notifyCustomer(ticket.ticketID, `Ticket status updated to ${status}`);
+  //     return ticket;
+  //   }
+  //   throw new Error('Ticket not found');
+  // }
 
   async closeTicket(ticketID: number): Promise<Ticket> {
     const ticket = await this.ticketsRepository.findOneBy({ ticketID });
@@ -166,5 +166,38 @@ export class TicketsService {
 
   async getAttachments(ticketID: number): Promise<Attachment[]> {
     return this.attachmentsRepository.find({ where: { ticket: { ticketID } } });
+  }
+
+  async updateTicketStatus(ticketID: number, status: string): Promise<Ticket> {
+    const ticket = await this.ticketsRepository.findOneBy({ ticketID });
+    if (ticket) {
+      const oldValue = ticket.status;
+      ticket.status = status;
+      if (status === 'Resolved') {
+        ticket.resolutionDate = new Date();
+        this.requestCustomerFeedback(ticket.customerID, ticket.ticketID);
+      }
+      await this.ticketsRepository.save(ticket);
+      await this.ticketHistoryService.logChange(ticketID, 'Status Update', oldValue, status);
+      this.notifyCustomer(ticket.ticketID, `Ticket status updated to ${status}`);
+      return ticket;
+    }
+    throw new Error('Ticket not found');
+  }
+
+  private async requestCustomerFeedback(customerID: string, ticketID: number) {
+    const email = `${customerID}@example.com`;
+    const message = `Your ticket with ID ${ticketID} has been resolved. Please provide your feedback: <feedback link>`;
+    await this.mailerService.sendMail(email, 'Ticket Resolved - Feedback Request', message);
+  }
+
+  async addCustomerFeedback(ticketID: number, feedback: string): Promise<Ticket> {
+    const ticket = await this.ticketsRepository.findOneBy({ ticketID });
+    if (ticket) {
+      ticket.customerFeedback = feedback;
+      await this.ticketsRepository.save(ticket);
+      return ticket;
+    }
+    throw new Error('Ticket not found');
   }
 }

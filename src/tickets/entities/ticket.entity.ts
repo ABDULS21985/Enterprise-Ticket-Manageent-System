@@ -42,5 +42,7 @@ export class Ticket {
 
   @OneToMany(() => Attachment, attachment => attachment.ticket)
   attachments: Attachment[];
-  
+
+  @Column({ nullable: true })
+  customerFeedback: string; // New column for customer feedback
 }

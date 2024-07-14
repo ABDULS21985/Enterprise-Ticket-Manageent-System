@@ -118,4 +118,12 @@ export class TicketsController {
   async getAttachments(@Param('ticketID') ticketID: number) {
     return this.ticketsService.getAttachments(ticketID);
   }
+
+  @Patch(':ticketID/feedback')
+  async addCustomerFeedback(
+    @Param('ticketID') ticketID: number,
+    @Body('feedback') feedback: string,
+  ): Promise<Ticket> {
+    return this.ticketsService.addCustomerFeedback(ticketID, feedback);
+  }
 }
