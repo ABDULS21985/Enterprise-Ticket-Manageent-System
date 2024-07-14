@@ -5,6 +5,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TicketsModule } from './tickets/tickets.module';
 import { MailerModule } from './mailer/mailer.module';
+import { ReportingModule } from './reporting/reporting.module';
+
 
 @Module({
   imports: [
@@ -17,6 +19,7 @@ import { MailerModule } from './mailer/mailer.module';
     ScheduleModule.forRoot(),
     TicketsModule,
     MailerModule,
+    ReportingModule,
   ],
 })
 export class AppModule {}
