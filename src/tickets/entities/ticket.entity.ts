@@ -33,7 +33,9 @@ export class Ticket {
 
   @Column({ nullable: true })
   lastEscalationDate: Date;  // New column for tracking the last escalation date
-
+  
+  @Column({ nullable: true })
+  slaDueDate: Date; 
   @OneToMany(() => Comment, comment => comment.ticket)
   comments: Comment[];
 

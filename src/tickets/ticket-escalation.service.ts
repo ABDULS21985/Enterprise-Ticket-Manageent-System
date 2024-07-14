@@ -4,33 +4,40 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan } from 'typeorm';
 import { Ticket } from './entities/ticket.entity';
-import { Cron } from '@nestjs/schedule';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { MailerService } from '../mailer/mailer.service';
 
 @Injectable()
 export class TicketEscalationService {
   constructor(
     @InjectRepository(Ticket)
     private ticketsRepository: Repository<Ticket>,
+    private mailerService: MailerService, // Inject MailerService
   ) {}
 
-  async escalateTickets(): Promise<void> {
+  @Cron(CronExpression.EVERY_HOUR)
+  async checkSLABreaches(): Promise<void> {
+    const currentDate = new Date();
     const tickets = await this.ticketsRepository.find({
       where: {
         status: 'Open',
-        priority: 'High',
-        creationDate: LessThan(new Date(new Date().getTime() - 24 * 60 * 60 * 1000)) // older than 24 hours
+        slaDueDate: LessThan(currentDate),
       },
     });
 
     for (const ticket of tickets) {
-      ticket.priority = 'Urgent';
-      await this.ticketsRepository.save(ticket);
-      // Optionally, notify relevant parties about the escalation
+      await this.notifyAgent(ticket.assignedAgent, `Ticket ${ticket.ticketID} has breached SLA`);
+      await this.notifyCustomer(ticket.customerID, `Your ticket ${ticket.ticketID} has breached SLA`);
     }
   }
 
-  @Cron('0 0 * * *') // Runs every day at midnight
-  async handleCron() {
-    await this.escalateTickets();
+  private async notifyCustomer(customerID: string, message: string) {
+    const email = `${customerID}@example.com`;
+    await this.mailerService.sendMail(email, 'SLA Breach Notification', message);
+  }
+
+  private async notifyAgent(agentID: string, message: string) {
+    const email = `${agentID}@example.com`;
+    await this.mailerService.sendMail(email, 'SLA Breach Notification', message);
   }
 }

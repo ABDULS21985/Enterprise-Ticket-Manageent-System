@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, LessThan } from 'typeorm';
 import { Ticket } from './entities/ticket.entity';
 import { TicketHistoryService } from './ticket-history.service';
 import { MailerService } from '../mailer/mailer.service';
 import { Attachment } from './entities/attachment.entity';
+import { addHours } from 'date-fns';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class TicketsService {
@@ -18,6 +20,8 @@ export class TicketsService {
   ) {}
 
   async createTicket(customerID: string, issueDescription: string, priority: string): Promise<Ticket> {
+    const slaDueDate = this.calculateSLADueDate(priority);
+
     const ticket = this.ticketsRepository.create({
       customerID,
       issueDescription,
@@ -26,11 +30,28 @@ export class TicketsService {
       assignedAgent: null,
       creationDate: new Date(),
       resolutionDate: null,
+      slaDueDate,
     });
 
     await this.ticketsRepository.save(ticket);
     this.notifyCustomer(ticket.ticketID, 'Ticket created');
     return ticket;
+  }
+
+  private calculateSLADueDate(priority: string): Date {
+    const currentDate = new Date();
+    switch (priority) {
+      case 'Urgent':
+        return addHours(currentDate, 4);
+      case 'High':
+        return addHours(currentDate, 8);
+      case 'Medium':
+        return addHours(currentDate, 24);
+      case 'Low':
+        return addHours(currentDate, 48);
+      default:
+        return currentDate;
+    }
   }
 
   async assignTicket(ticketID: number, agentID: string): Promise<Ticket> {
@@ -46,22 +67,6 @@ export class TicketsService {
     }
     throw new Error('Ticket not found or already in progress');
   }
-
-  // async updateTicketStatus(ticketID: number, status: string): Promise<Ticket> {
-  //   const ticket = await this.ticketsRepository.findOneBy({ ticketID });
-  //   if (ticket) {
-  //     const oldValue = ticket.status;
-  //     ticket.status = status;
-  //     if (status === 'Resolved') {
-  //       ticket.resolutionDate = new Date();
-  //     }
-  //     await this.ticketsRepository.save(ticket);
-  //     await this.ticketHistoryService.logChange(ticketID, 'Status Update', oldValue, status);
-  //     this.notifyCustomer(ticket.ticketID, `Ticket status updated to ${status}`);
-  //     return ticket;
-  //   }
-  //   throw new Error('Ticket not found');
-  // }
 
   async closeTicket(ticketID: number): Promise<Ticket> {
     const ticket = await this.ticketsRepository.findOneBy({ ticketID });
@@ -135,6 +140,7 @@ export class TicketsService {
     const bestAgent = agentWorkloads.reduce((prev, curr) => (prev.workload < curr.workload ? prev : curr));
     return bestAgent.agentID;
   }
+
   async reassignTicket(ticketID: number, newAgentID: string): Promise<Ticket> {
     const ticket = await this.ticketsRepository.findOneBy({ ticketID });
     if (ticket && ticket.status === 'In Progress') {
@@ -147,6 +153,7 @@ export class TicketsService {
     }
     throw new Error('Ticket not found or not in progress');
   }
+
   async addAttachment(ticketID: number, filename: string, filepath: string, mimetype: string): Promise<Attachment> {
     const ticket = await this.ticketsRepository.findOneBy({ ticketID });
     if (!ticket) {
@@ -200,4 +207,21 @@ export class TicketsService {
     }
     throw new Error('Ticket not found');
   }
-}
+
+  @Cron(CronExpression.EVERY_HOUR)
+  async checkSLABreaches(): Promise<void> {
+    const currentDate = new Date();
+    const tickets = await this.ticketsRepository.find({
+      where: {
+        status: 'Open',
+        slaDueDate: LessThan(currentDate),
+      },
+    });
+  
+    for (const ticket of tickets) {
+      this.notifyAgent(ticket.assignedAgent, `Ticket ${ticket.ticketID} has breached SLA`);
+      this.notifyCustomer(ticket.ticketID, `Your ticket ${ticket.ticketID} has breached SLA`);
+      // Optionally, escalate the ticket or update its status
+    }
+  }
+} 
