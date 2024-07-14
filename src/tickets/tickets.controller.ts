@@ -1,13 +1,15 @@
 // src/tickets/tickets.controller.ts
 
-import { Controller, Post, Patch, Param, Body, Get, Query } from '@nestjs/common';
+import { Controller, Post, Patch, Param, Body, Get, Query, UseGuards } from '@nestjs/common';
 import { TicketsService } from './tickets.service';
 import { Ticket } from './entities/ticket.entity';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('tickets')
 export class TicketsController {
   constructor(private readonly ticketsService: TicketsService) {}
 
+  @UseGuards(AuthGuard('jwt'))
   @Post()
   async createTicket(
     @Body('customerID') customerID: string,
@@ -17,6 +19,7 @@ export class TicketsController {
     return this.ticketsService.createTicket(customerID, issueDescription, priority);
   }
 
+  @UseGuards(AuthGuard('jwt'))
   @Patch(':ticketID/assign')
   async assignTicket(
     @Param('ticketID') ticketID: number,
@@ -25,6 +28,7 @@ export class TicketsController {
     return this.ticketsService.assignTicket(ticketID, agentID);
   }
 
+  @UseGuards(AuthGuard('jwt'))
   @Patch(':ticketID/status')
   async updateTicketStatus(
     @Param('ticketID') ticketID: number,
@@ -33,11 +37,13 @@ export class TicketsController {
     return this.ticketsService.updateTicketStatus(ticketID, status);
   }
 
+  @UseGuards(AuthGuard('jwt'))
   @Patch(':ticketID/close')
   async closeTicket(@Param('ticketID') ticketID: number): Promise<Ticket> {
     return this.ticketsService.closeTicket(ticketID);
   }
 
+  @UseGuards(AuthGuard('jwt'))
   @Get()
   async getTickets(
     @Query('status') status?: string,
