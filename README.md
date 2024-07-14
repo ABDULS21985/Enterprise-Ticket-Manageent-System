@@ -1,5 +1,7 @@
 Enterprise Ticket Management System
+
 Overview
+
 The Enterprise Ticket Management System is designed to streamline and manage customer support tickets. Built with NestJS, TypeORM, and SQLite, it provides features for creating, assigning, updating, and closing tickets, along with priority escalation, commenting, and ticket history tracking.
 
 Features
