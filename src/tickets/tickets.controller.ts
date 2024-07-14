@@ -58,4 +58,13 @@ export class TicketsController {
   ): Promise<Ticket[]> {
     return this.ticketsService.getTickets({ status, priority, assignedAgent });
   }
+  @Patch(':ticketID/reassign')
+  async reassignTicket(
+    @Param('ticketID') ticketID: number,
+    @Body('newAgentID') newAgentID: string,
+  ): Promise<Ticket> {
+    return this.ticketsService.reassignTicket(ticketID, newAgentID);
+  }
+  
+
 }

@@ -134,4 +134,22 @@ export class TicketsService {
     const bestAgent = agentWorkloads.reduce((prev, curr) => (prev.workload < curr.workload ? prev : curr));
     return bestAgent.agentID;
   }
+  async reassignTicket(ticketID: number, newAgentID: string): Promise<Ticket> {
+    const ticket = await this.ticketsRepository.findOneBy({ ticketID });
+    if (ticket && ticket.status === 'In Progress') {
+      const oldValue = ticket.assignedAgent;
+      ticket.assignedAgent = newAgentID;
+      await this.ticketsRepository.save(ticket);
+      await this.ticketHistoryService.logChange(ticketID, 'Reassigned Agent', oldValue, newAgentID);
+      this.notifyAgent(newAgentID, 'Ticket reassigned');
+      return ticket;
+    }
+    throw new Error('Ticket not found or not in progress');
+  }
+  
+
+
+
+
+
 }
