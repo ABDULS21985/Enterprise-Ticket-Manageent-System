@@ -3,6 +3,7 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
 import { Comment } from './comment.entity';
 import { TicketHistory } from './ticket-history.entity';
+import { Attachment } from './attachment.entity';
 
 @Entity()
 export class Ticket {
@@ -38,5 +39,8 @@ export class Ticket {
 
   @OneToMany(() => TicketHistory, history => history.ticket)
   history: TicketHistory[];
+
+  @OneToMany(() => Attachment, attachment => attachment.ticket)
+  attachments: Attachment[];
   
 }

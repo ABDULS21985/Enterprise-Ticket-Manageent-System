@@ -1,17 +1,18 @@
-// src/tickets/tickets.service.ts
-
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Ticket } from './entities/ticket.entity';
 import { TicketHistoryService } from './ticket-history.service';
 import { MailerService } from '../mailer/mailer.service';
+import { Attachment } from './entities/attachment.entity';
 
 @Injectable()
 export class TicketsService {
   constructor(
     @InjectRepository(Ticket)
     private ticketsRepository: Repository<Ticket>,
+    @InjectRepository(Attachment)
+    private attachmentsRepository: Repository<Attachment>,
     private ticketHistoryService: TicketHistoryService,
     private mailerService: MailerService,
   ) {}
@@ -146,10 +147,24 @@ export class TicketsService {
     }
     throw new Error('Ticket not found or not in progress');
   }
-  
+  async addAttachment(ticketID: number, filename: string, filepath: string, mimetype: string): Promise<Attachment> {
+    const ticket = await this.ticketsRepository.findOneBy({ ticketID });
+    if (!ticket) {
+      throw new Error('Ticket not found');
+    }
 
+    const attachment = this.attachmentsRepository.create({
+      ticket,
+      filename,
+      filepath,
+      mimetype,
+    });
 
+    await this.attachmentsRepository.save(attachment);
+    return attachment;
+  }
 
-
-
+  async getAttachments(ticketID: number): Promise<Attachment[]> {
+    return this.attachmentsRepository.find({ where: { ticket: { ticketID } } });
+  }
 }
