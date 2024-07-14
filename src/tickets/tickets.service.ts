@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Ticket } from './entities/ticket.entity';
 import { TicketHistoryService } from './ticket-history.service';
+import { MailerService } from '../mailer/mailer.service';
 
 @Injectable()
 export class TicketsService {
@@ -12,6 +13,7 @@ export class TicketsService {
     @InjectRepository(Ticket)
     private ticketsRepository: Repository<Ticket>,
     private ticketHistoryService: TicketHistoryService,
+    private mailerService: MailerService,
   ) {}
 
   async createTicket(customerID: string, issueDescription: string, priority: string): Promise<Ticket> {
@@ -91,11 +93,16 @@ export class TicketsService {
     return query.getMany();
   }
 
-  private notifyCustomer(ticketID: number, message: string) {
-    // Logic to notify the customer
+  private async notifyCustomer(ticketID: number, message: string) {
+    const ticket = await this.ticketsRepository.findOneBy({ ticketID });
+    if (ticket) {
+      const email = `${ticket.customerID}@example.com`; // Adjust this as necessary
+      await this.mailerService.sendMail(email, 'Ticket Update', message);
+    }
   }
 
-  private notifyAgent(agentID: string, message: string) {
-    // Logic to notify the agent
+  private async notifyAgent(agentID: string, message: string) {
+    const email = `${agentID}@example.com`; // Adjust this as necessary
+    await this.mailerService.sendMail(email, 'Ticket Assignment', message);
   }
 }
